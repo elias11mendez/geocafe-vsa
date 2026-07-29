@@ -32,8 +32,8 @@ export default function Ubication() {
         .setLngLat(coords)
         .setPopup(
           new maplibregl.Popup({ offset: 10 }).setHTML(
-            `<div style="color:#000; font-weight:bold; padding:4px;">📍 ${mensaje}<br/><span style="font-size:10px; color:#555;">(Puedes arrastrar este punto)</span></div>`,
-          ),
+            `<div style="color:#000; font-weight:bold; padding:4px;">📍 ${mensaje}<br/><span style="font-size:10px; color:#555;">(Puedes arrastrar este punto)</span></div>`
+          )
         )
         .addTo(map);
 
@@ -52,7 +52,7 @@ export default function Ubication() {
     calcularRuta(coords);
   };
 
-const obtenerUbicacionGPS = () => {
+  const obtenerUbicacionGPS = () => {
     if (!navigator.geolocation) {
       alert("Tu navegador no soporta geolocalización.");
       return;
@@ -61,9 +61,9 @@ const obtenerUbicacionGPS = () => {
     setCargando(true);
 
     const opcionesGeo = {
-      enableHighAccuracy: false, 
-      timeout: 20000,          
-      maximumAge: 60000          
+      enableHighAccuracy: true, // Cambiado a true para mayor precisión de GPS real
+      timeout: 15000,
+      maximumAge: 0, // Fuerza a tomar la ubicación en tiempo real
     };
 
     navigator.geolocation.getCurrentPosition(
@@ -73,21 +73,36 @@ const obtenerUbicacionGPS = () => {
         setCargando(false);
       },
       (error) => {
-        console.error("Error de GPS en Samsung/Móvil:", error.code, error.message);
+        console.error("Error al obtener GPS:", error);
         setCargando(false);
 
         if (error.code === error.PERMISSION_DENIED) {
-          alert("Permiso de ubicación denegado. Ve a los ajustes de tu navegador Samsung/Chrome y permite la ubicación.");
+          alert(
+            "Permiso de ubicación denegado. Permite el acceso a la ubicación en tu navegador para continuar."
+          );
+        } else if (error.code === error.TIMEOUT) {
+          alert(
+            "Se agotó el tiempo de espera para obtener tu ubicación GPS. Inténtalo de nuevo o usa 'Marcar en mapa'."
+          );
         } else {
-          alert("No se pudo obtener la ubicación automáticamente. Usa 'Marcar en mapa'.");
+          alert(
+            "No se pudo obtener tu ubicación. Por favor usa la opción 'Marcar en mapa'."
+          );
         }
       },
       opcionesGeo
     );
   };
+
   const activarPunteroManual = () => {
     const map = mapRef.current;
     if (!map) return;
+
+    if (modoSeleccion) {
+      setModoSeleccion(false);
+      map.getCanvas().style.cursor = "";
+      return;
+    }
 
     setModoSeleccion(true);
     map.getCanvas().style.cursor = "crosshair";
