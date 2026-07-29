@@ -32,8 +32,8 @@ export default function Ubication() {
         .setLngLat(coords)
         .setPopup(
           new maplibregl.Popup({ offset: 10 }).setHTML(
-            `<div style="color:#000; font-weight:bold; padding:4px;">📍 ${mensaje}<br/><span style="font-size:10px; color:#555;">(Puedes arrastrar este punto)</span></div>`
-          )
+            `<div style="color:#000; font-weight:bold; padding:4px;">📍 ${mensaje}<br/><span style="font-size:10px; color:#555;">(Puedes arrastrar este punto)</span></div>`,
+          ),
         )
         .addTo(map);
 
@@ -52,13 +52,19 @@ export default function Ubication() {
     calcularRuta(coords);
   };
 
-  const obtenerUbicacionGPS = () => {
+const obtenerUbicacionGPS = () => {
     if (!navigator.geolocation) {
       alert("Tu navegador no soporta geolocalización.");
       return;
     }
 
     setCargando(true);
+
+    const opcionesGeo = {
+      enableHighAccuracy: false, 
+      timeout: 20000,          
+      maximumAge: 60000          
+    };
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -67,16 +73,18 @@ export default function Ubication() {
         setCargando(false);
       },
       (error) => {
-        console.error("Error al localizar:", error);
+        console.error("Error de GPS en Samsung/Móvil:", error.code, error.message);
         setCargando(false);
-        alert(
-          "No se pudo obtener precisión por GPS. Usa 'Marcar en el mapa' o arrastra el punto."
-        );
+
+        if (error.code === error.PERMISSION_DENIED) {
+          alert("Permiso de ubicación denegado. Ve a los ajustes de tu navegador Samsung/Chrome y permite la ubicación.");
+        } else {
+          alert("No se pudo obtener la ubicación automáticamente. Usa 'Marcar en mapa'.");
+        }
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      opcionesGeo
     );
   };
-
   const activarPunteroManual = () => {
     const map = mapRef.current;
     if (!map) return;
