@@ -1,0 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+
+@import "tailwindcss";
+
+
+@import "tailwindcss";
+
+@theme {
+  /* Opción A: Reemplazar la fuente por defecto de todo el proyecto */
+  --font-sans: "Montserrat", sans-serif;
+
+  /* Opción B: O si prefieres crear una clase personalizada (.font-montserrat) */
+  --font-montserrat: "Montserrat", sans-serif;
+}
+:root,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
