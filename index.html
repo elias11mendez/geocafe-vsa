@@ -1,10 +1,63 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Favicon corregido para que cargue desde la raíz pública en producción -->
+    <link rel="icon" type="image/svg+xml" href="/public/MYLOGO.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Islas de Cafe | Villahermosa</title>
+
+    <!-- 1. SEO Básico y Palabras Clave -->
+    <title>Islas de Café | Mapa Interactivo de Cafeterías en Villahermosa</title>
+    <meta name="description" content="Descubre y ubica cafeterías en Villahermosa, Tabasco. Explora el mapa interactivo de isócronas y encuentra café a menos de 5 minutos de ti." />
+    <meta name="keywords" content="cafe villahermosa, cafeterias en villahermosa, mapa de cafes villahermosa, donde tomar cafe villahermosa, cafeterias tabasco, isocronas cafe villahermosa, cafe cerca de mi villahermosa" />
+    <meta name="author" content="EliasGeoDev" />
+    <meta name="robots" content="index, follow" />
+    
+    <!-- URL Canónica -->
+    <link rel="canonical" href="https://geocafe-vsa.sinekasur.site/" />
+
+    <!-- 2. Open Graph / Facebook / WhatsApp / LinkedIn (Para vista previa al compartir) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://geocafe-vsa.sinekasur.site/" />
+    <meta property="og:title" content="Islas de Café | Mapa Interactivo de Cafeterías en Villahermosa" />
+    <meta property="og:description" content="Visualiza la cobertura de cafeterías en Villahermosa, Tabasco a través de análisis espacial e isócronas a pie." />
+    <!-- Asegúrate de colocar una captura bonita de tu mapa en la carpeta 'public' con el nombre og-image.png -->
+    <meta property="og:image" content="https://geocafe-vsa.sinekasur.site/og-image.webp" />
+    <meta property="og:locale" content="es_MX" />
+
+    <!-- 3. Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://geocafe-vsa.sinekasur.site/" />
+    <meta name="twitter:title" content="Islas de Café | Mapa Interactivo de Cafeterías en Villahermosa" />
+    <meta name="twitter:description" content="Visualiza la cobertura de cafeterías en Villahermosa a través de análisis espacial e isócronas." />
+    <meta name="twitter:image" content="https://geocafe-vsa.sinekasur.site/og-image.webp" />
+
+    <!-- 4. Datos Estructurados JSON-LD (Schema.org para Google) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Islas de Café Villahermosa",
+      "url": "https://geocafe-vsa.sinekasur.site/",
+      "description": "Aplicación web cartográfica para consultar y analizar la ubicación de cafeterías e isócronas de caminabilidad en Villahermosa, Tabasco.",
+      "applicationCategory": "GeographicInformationSystem",
+      "operatingSystem": "All",
+      "author": {
+        "@type": "Person",
+        "name": "EliasGeoDev",
+        "url": "https://eliasgeodev.sinekasur.site/"
+      },
+      "spatialCoverage": {
+        "@type": "Place",
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": "17.9892",
+          "longitude": "-92.9281"
+        },
+        "name": "Villahermosa, Tabasco, México"
+      }
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -7,7 +7,6 @@ export function useMapContainer(mapContainer, mapRef) {
   const [isReady, setIsReady] = useState(false);
   const { setMapReady } = useMapInstance();
 
-  // 1. Inicialización inicial del mapa
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
 
@@ -16,27 +15,28 @@ export function useMapContainer(mapContainer, mapRef) {
       style: {
         version: 8,
         sources: {
-          "smooth-dark-tiles": {
+          "carto-dark": {
             type: "raster",
-            // 💡 Tiles oscuras de alto contraste con red vial muy visible
             tiles: [
-              "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}@2x.png",
+              "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+              "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+              "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
             ],
             tileSize: 256,
             attribution:
-              '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a>',
+              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
           },
         },
         layers: [
           {
-            id: "smooth-dark-layer",
+            id: "carto-dark-layer",
             type: "raster",
-            source: "smooth-dark-tiles",
+            source: "carto-dark",
           },
         ],
       },
 
-      center: [-92.929677,  17.983333],
+      center: [-92.929677, 17.983333],
       zoom: 12.8,
     });
 
@@ -55,8 +55,6 @@ export function useMapContainer(mapContainer, mapRef) {
       }
     };
   }, [mapContainer, mapRef]);
-
-  // 2. Cambio directo de estilo de mapa base
 
   return isReady;
 }
