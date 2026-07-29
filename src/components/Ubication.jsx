@@ -42,8 +42,8 @@ export default function Ubication() {
       el.className =
         "relative flex items-center justify-center w-6 h-6 cursor-grab active:cursor-grabbing";
       el.innerHTML = `
-        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-        <span class="relative inline-flex rounded-full h-4 w-4 bg-cyan-500 border-2 border-white shadow-lg"></span>
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-4 w-4 bg-red-500 border-2 border-white shadow-lg"></span>
       `;
 
       const marker = new maplibregl.Marker({
