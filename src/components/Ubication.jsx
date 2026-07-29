@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import * as maplibregl from "maplibre-gl";
 import { Locate, MousePointerClick, Loader2 } from "lucide-react";
 import { useMapInstance } from "../context/MapContext";
@@ -7,17 +7,36 @@ import RouteCaffe from "./RouteCaffe";
 
 export default function Ubication() {
   const { mapRef } = useMapInstance();
+
   const [cargando, setCargando] = useState(false);
   const [modoSeleccion, setModoSeleccion] = useState(false);
+
   const userMarkerRef = useRef(null);
+  const seleccionActivaRef = useRef(false);
 
   const { calcularRuta, limpiarRuta, routeData, routeInfo, nearestCafe } =
     useRoute();
 
+  // ============================================================
+  // FIJAR UBICACIÓN
+  // ============================================================
   const fijarUbicacion = (coords, mensaje = "Ubicación fijada") => {
     const map = mapRef.current;
     if (!map) return;
 
+    // Validar coordenadas
+    if (
+      !Array.isArray(coords) ||
+      coords.length !== 2 ||
+      !Number.isFinite(coords[0]) ||
+      !Number.isFinite(coords[1])
+    ) {
+      console.error("Coordenadas inválidas:", coords);
+      return;
+    }
+
+
+    // Crear o actualizar marcador
     if (!userMarkerRef.current) {
       const el = document.createElement("div");
       el.className =
@@ -27,15 +46,22 @@ export default function Ubication() {
         <span class="relative inline-flex rounded-full h-4 w-4 bg-cyan-500 border-2 border-white shadow-lg"></span>
       `;
 
-      const marker = new maplibregl.Marker({ element: el, draggable: true })
+      const marker = new maplibregl.Marker({
+        element: el,
+        draggable: true,
+      })
         .setLngLat(coords)
         .setPopup(
-          new maplibregl.Popup({ offset: 10 }).setHTML(
-            `<div style="color:#000; font-weight:bold; padding:4px;">📍 ${mensaje}<br/><span style="font-size:10px; color:#555;">(Puedes arrastrar este punto)</span></div>`
-          )
+          new maplibregl.Popup({ offset: 10 }).setHTML(`
+            <div style="color:#000; font-weight:bold; padding:4px;">
+               ${mensaje}<br/>
+              <span style="font-size:10px; color:#555;">(Puedes arrastrar este punto)</span>
+            </div>
+          `)
         )
         .addTo(map);
 
+      // Listener para arrastre
       marker.on("dragend", () => {
         const lngLat = marker.getLngLat();
         const nuevasCoords = [lngLat.lng, lngLat.lat];
@@ -47,63 +73,103 @@ export default function Ubication() {
       userMarkerRef.current.setLngLat(coords);
     }
 
-    map.flyTo({ center: coords, zoom: 15, pitch: 30 });
+    map.flyTo({
+      center: coords,
+      zoom: 15,
+      pitch: 30,
+      essential: true,
+    });
+
     calcularRuta(coords);
   };
 
-  // 🚀 Función de Geolocalización Optimizada para Mobile / Samsung
+  // ============================================================
+  // GPS
+  // ============================================================
   const obtenerUbicacionGPS = () => {
     if (!navigator.geolocation) {
       alert("Tu navegador no soporta geolocalización.");
       return;
     }
 
-    // Comprobación de seguridad para entorno seguro (HTTPS)
-    if (
-      window.location.protocol !== "https:" &&
-      window.location.hostname !== "localhost" &&
-      window.location.hostname !== "127.0.0.1"
-    ) {
+    const esLocalhost =
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1";
+    const esHTTPS = window.location.protocol === "https:";
+
+    if (!esHTTPS && !esLocalhost) {
       alert(
         "La geolocalización requiere una conexión segura (HTTPS) para funcionar en teléfonos móviles."
       );
       return;
     }
 
+    if (cargando) return;
     setCargando(true);
 
-    const intentarObtener = (altaPrecision = true) => {
+    const intentarObtener = (altaPrecision) => {
       const opciones = {
         enableHighAccuracy: altaPrecision,
-        timeout: altaPrecision ? 10000 : 15000,
-        maximumAge: 5000,
+        timeout: altaPrecision ? 15000 : 20000,
+        maximumAge: altaPrecision ? 10000 : 60000,
       };
+
+      console.log(" Solicitando ubicación:", opciones);
 
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          const coords = [pos.coords.longitude, pos.coords.latitude];
-          fijarUbicacion(coords, "Ubicación detectada");
+          const { latitude, longitude, accuracy } = pos.coords;
+          console.log(" GPS obtenido:", { latitude, longitude, accuracy });
+
+          const coords = [longitude, latitude];
+          fijarUbicacion(
+            coords,
+            `Ubicación detectada ±${Math.round(accuracy || 0)}m`
+          );
           setCargando(false);
         },
         (error) => {
-          // Reintento con precisión estándar si el GPS satelital no responde a tiempo
-          if (altaPrecision && error.code === error.TIMEOUT) {
+          console.error("Error GPS:", {
+            code: error.code,
+            message: error.message,
+            altaPrecision,
+          });
+
+          if (
+            altaPrecision &&
+            (error.code === error.TIMEOUT ||
+              error.code === error.POSITION_UNAVAILABLE)
+          ) {
             intentarObtener(false);
             return;
           }
 
-          console.error("Error al obtener GPS:", error);
           setCargando(false);
 
           if (error.code === error.PERMISSION_DENIED) {
             alert(
-              "Permiso de ubicación denegado en tu navegador/móvil. Habilita los permisos de ubicación e inténtalo de nuevo."
+              "Permiso de ubicación denegado. Actívalo en los ajustes del navegador en Android/Samsung."
             );
-          } else {
-            alert(
-              "No se pudo obtener la ubicación con precisión. Por favor, selecciona tu punto con 'Marcar en mapa'."
-            );
+            return;
           }
+
+          if (error.code === error.POSITION_UNAVAILABLE) {
+            alert(
+              "Samsung no pudo determinar tu ubicación. Activa la ubicación/GPS e inténtalo nuevamente."
+            );
+            return;
+          }
+
+          if (error.code === error.TIMEOUT) {
+            alert(
+              "La ubicación tardó demasiado en responder. Activa el GPS y vuelve a intentarlo."
+            );
+            return;
+          }
+
+          alert(
+            "No se pudo obtener el GPS en este momento. Usa el botón 'Marcar en mapa'."
+          );
         },
         opciones
       );
@@ -112,32 +178,57 @@ export default function Ubication() {
     intentarObtener(true);
   };
 
-  // 🎯 Marcación manual compatible con pantallas táctiles (Touch Events)
+  // ============================================================
+  // SELECCIÓN MANUAL
+  // ============================================================
   const activarPunteroManual = () => {
     const map = mapRef.current;
     if (!map) return;
 
+    // Cancelar selección si ya estaba activa
     if (modoSeleccion) {
+      seleccionActivaRef.current = false;
       setModoSeleccion(false);
       map.getCanvas().style.cursor = "";
       return;
     }
 
+    // Activar modo selección
+    seleccionActivaRef.current = true;
     setModoSeleccion(true);
     map.getCanvas().style.cursor = "crosshair";
 
-    const alTocarOMapear = (e) => {
+    const alInteractuarConMapa = (e) => {
+      if (!seleccionActivaRef.current) return;
+
+      seleccionActivaRef.current = false;
       const coords = [e.lngLat.lng, e.lngLat.lat];
+
       fijarUbicacion(coords, "Mi Ubicación Exacta");
 
-      map.off("click", alTocarOMapear);
-      map.getCanvas().style.cursor = "";
       setModoSeleccion(false);
+      map.getCanvas().style.cursor = "";
     };
 
-    map.once("click", alTocarOMapear);
+    map.once("click", alInteractuarConMapa);
   };
 
+  // ============================================================
+  // LIMPIEZA
+  // ============================================================
+  useEffect(() => {
+    return () => {
+      seleccionActivaRef.current = false;
+      const map = mapRef.current;
+      if (map) {
+        map.getCanvas().style.cursor = "";
+      }
+    };
+  }, [mapRef]);
+
+  // ============================================================
+  // RENDER
+  // ============================================================
   return (
     <>
       {routeData && (
@@ -149,9 +240,9 @@ export default function Ubication() {
         />
       )}
 
-      {/* Barra de control flotante adaptable a pantallas de móvil */}
       <div className="font-montserrat absolute bottom-6 w-[90%] max-w-xs h-14 left-1/2 -translate-x-1/2 z-10 flex items-center justify-between gap-1 bg-slate-900/90 backdrop-blur-md p-1.5 rounded-2xl shadow-2xl border border-slate-700/80">
         <button
+          type="button"
           onClick={activarPunteroManual}
           className={`flex-1 flex items-center justify-center gap-1.5 h-11 px-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
             modoSeleccion
@@ -165,13 +256,14 @@ export default function Ubication() {
           </span>
         </button>
 
-        <div className="w-[1px] h-6 bg-slate-700/80 shrink-0"></div>
+        <div className="w-[1px] h-6 bg-slate-700/80 shrink-0" />
 
         <button
+          type="button"
           onClick={obtenerUbicacionGPS}
           disabled={cargando}
           title="Obtener mi ubicación"
-          className="flex-1 flex items-center justify-center gap-1.5 h-11 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-3 rounded-xl shadow-lg shadow-cyan-500/20 transition-all active:scale-95 text-xs cursor-pointer disabled:opacity-50"
+          className="flex-1 flex items-center justify-center gap-1.5 h-11 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-3 rounded-xl shadow-lg shadow-cyan-500/20 transition-all active:scale-95 text-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {cargando ? (
             <>
